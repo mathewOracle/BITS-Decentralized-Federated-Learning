@@ -21,7 +21,6 @@ def train():
     try:
         x = np.random.rand(50, 1)
         y = 2 * x + 1 + np.random.randn(50, 1) * 0.1
-        print(f"x:{x} , y:{y}")
         _, loss = train_model(x, y, model)
         last_loss = loss
         return {"status": "trained", "loss": loss}
