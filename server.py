@@ -3,17 +3,20 @@ from pydantic import BaseModel
 import numpy as np
 import os
 from train_and_sync import create_model, train_model, get_weights, set_weights, gossip_sync
+from apscheduler.schedulers.background import BackgroundScheduler
+
 
 app = FastAPI()
 model = create_model()
 last_loss = 0.0
 last_mse = 0.0
+scheduler = BackgroundScheduler()
 
 class SyncRequest(BaseModel):
     peer: str
 
-@app.post("/train")
 def train():
+    print("Training model...")
     global last_loss
     try:
         x = np.random.rand(50, 1)
@@ -26,6 +29,16 @@ def train():
         import traceback
         traceback.print_exc()
         return {"error": str(e)}
+    
+@app.post("/train")
+def trigger_train():
+    train_model()
+    return {"message": "Training triggered manually"}
+
+@app.on_event("startup")
+def startup_event():
+    scheduler.add_job(train, 'interval', seconds=10)
+    scheduler.start()
 
 @app.get("/weights")
 def weights():
@@ -56,6 +69,7 @@ def evaluate():
 
 @app.get("/metrics")
 def metrics():
+    print(f"ml_loss {last_loss}\nml_mse {last_mse}")
     return Response(
         content=f"ml_loss {last_loss}\nml_mse {last_mse}\n",
         media_type="text/plain"

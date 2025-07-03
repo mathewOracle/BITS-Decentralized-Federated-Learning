@@ -34,6 +34,7 @@ spec:
       containers:
       - name: node
         image: us-central1-docker.pkg.dev/{{PROJECTID}}/gcp-docker-repo/decentral:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
@@ -47,8 +48,8 @@ spec:
           periodSeconds: 10
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "100m"
-          limits:
             memory: "128Mi"
-            cpu: "200m"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
