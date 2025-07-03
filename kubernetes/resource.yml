@@ -1,32 +1,78 @@
-# iot-pod.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: iot-node-1
-  labels:
-    app: iot
-spec:
-  containers:
-  - name: node
-    image: us-central1-docker.pkg.dev/{{PROJECTID}}/gcp-docker-repo/decentral:latest
-    imagePullPolicy: Always
-    ports:
-    - containerPort: 8080
+# # iot-pod.yaml
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: iot-node-1
+#   labels:
+#     app: iot
+# spec:
+#   containers:
+#   - name: node
+#     image: us-central1-docker.pkg.dev/{{PROJECTID}}/gcp-docker-repo/decentral:latest
+#     imagePullPolicy: Always
+#     ports:
+#     - containerPort: 8080
+# # ---
+# # apiVersion: v1
+# # kind: Service
+# # metadata:
+# #   name: divanalysis-service
+# # spec:
+# #   selector:
+# #     app: divanalysis
+# #   ports:
+# #     - protocol: TCP
+# #       port: 80
+# #       targetPort: 5050
+# #   type: LoadBalancer
+# #   loadBalancerIP: 104.155.141.5
+
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: iot-node
+# spec:
+#   serviceName: "iot"
+#   replicas: 3
+#   selector:
+#     matchLabels:
+#       app: iot
+#   template:
+#     metadata:
+#       labels:
+#         app: iot
+#     spec:
+#       containers:
+#       - name: node
+#         image: us-central1-docker.pkg.dev/{{PROJECTID}}/gcp-docker-repo/decentral:latest
+#         imagePullPolicy: Always
+#         ports:
+#         - containerPort: 8080
 # ---
 # apiVersion: v1
 # kind: Service
 # metadata:
-#   name: divanalysis-service
+#   name: iot
 # spec:
-#   selector:
-#     app: divanalysis
 #   ports:
-#     - protocol: TCP
-#       port: 80
-#       targetPort: 5050
-#   type: LoadBalancer
-#   loadBalancerIP: 104.155.141.5
-
+#   - port: 8000
+#     name: web
+#   clusterIP: None # Required for stable DNS
+#   selector:
+#     app: iot
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iot
+spec:
+  clusterIP: None
+  selector:
+    app: iot
+  ports:
+  - port: 8000
+    name: http
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -45,18 +91,8 @@ spec:
       containers:
       - name: node
         image: us-central1-docker.pkg.dev/{{PROJECTID}}/gcp-docker-repo/decentral:latest
-        imagePullPolicy: Always
         ports:
-        - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: iot
-spec:
-  ports:
-  - port: 8000
-    name: web
-  clusterIP: None # Required for stable DNS
-  selector:
-    app: iot
+        - containerPort: 8000
+        env:
+        - name: PEERS
+          value: "iot-node-0.iot:8000,iot-node-1.iot:8000,iot-node-2.iot:8000"

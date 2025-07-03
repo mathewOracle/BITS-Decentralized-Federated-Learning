@@ -1,5 +1,3 @@
-# model.py
-import numpy as np
 import tensorflow as tf
 
 def create_model():
@@ -8,4 +6,3 @@ def create_model():
     ])
     model.compile(optimizer='sgd', loss='mean_squared_error')
     return model
-
