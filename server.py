@@ -29,14 +29,29 @@ def train():
         traceback.print_exc()
         return {"error": str(e)}
     
+def evaluate():
+    print("Evaluating model...")
+    global last_mse
+    x_test = np.linspace(0, 1, 20).reshape(-1, 1)
+    y_true = 2 * x_test + 1
+    y_pred = model.predict(x_test)
+    mse = np.mean((y_true - y_pred) ** 2)
+    last_mse = float(mse)
+    return {"mse": last_mse}
+    
 @app.post("/train")
 def trigger_train():
-    train_model()
-    return {"message": "Training triggered manually"}
+    return train()
+
+@app.get("/evaluate")
+def trigger_evaluate():
+    return evaluate()
 
 @app.on_event("startup")
 def startup_event():
     scheduler.add_job(train, 'interval', seconds=10)
+    scheduler.add_job(evaluate, 'interval', seconds=10)
+    scheduler.add_job(sync_all, 'interval', seconds=30)
     scheduler.start()
 
 @app.get("/weights")
@@ -51,20 +66,11 @@ def sync(req: SyncRequest):
 @app.post("/sync-all")
 def sync_all():
     peers = os.environ.get("PEERS", "").split(',')
+    print("Peers to sync with:", peers)
     for peer in peers:
         if peer:
             gossip_sync(peer.strip(), model)
     return {"status": "gossip sync done"}
-
-@app.get("/evaluate")
-def evaluate():
-    global last_mse
-    x_test = np.linspace(0, 1, 20).reshape(-1, 1)
-    y_true = 2 * x_test + 1
-    y_pred = model.predict(x_test)
-    mse = np.mean((y_true - y_pred) ** 2)
-    last_mse = float(mse)
-    return {"mse": last_mse}
 
 @app.get("/metrics")
 def metrics():

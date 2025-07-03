@@ -8,6 +8,8 @@ def train_model(x, y, model):
     return model, history.history['loss'][0]
 
 def get_weights(model):
+    weight_list=[w.tolist() for w in model.get_weights()]
+    print(f"Weight List: {weight_list}")
     return [w.tolist() for w in model.get_weights()]
 
 def set_weights(model, weights):
