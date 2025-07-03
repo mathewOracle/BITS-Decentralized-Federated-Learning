@@ -3,8 +3,9 @@ import requests
 from model import create_model
 
 def train_model(x, y, model):
-    model.fit(x, y, epochs=1, verbose=0)
-    return model
+    history=model.fit(x, y, epochs=1, verbose=0)
+    print("Loss:", history.history['loss'][0])
+    return model, history.history['loss'][0]
 
 def get_weights(model):
     return [w.tolist() for w in model.get_weights()]

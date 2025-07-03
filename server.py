@@ -15,11 +15,17 @@ class SyncRequest(BaseModel):
 @app.post("/train")
 def train():
     global last_loss
-    x = np.random.rand(50, 1)
-    y = 2 * x + 1 + np.random.randn(50, 1) * 0.1
-    _, loss = train_model(x, y, model)
-    last_loss = loss
-    return {"status": "trained", "loss": loss}
+    try:
+        x = np.random.rand(50, 1)
+        y = 2 * x + 1 + np.random.randn(50, 1) * 0.1
+        print(f"x:{x} , y:{y}")
+        _, loss = train_model(x, y, model)
+        last_loss = loss
+        return {"status": "trained", "loss": loss}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
 
 @app.get("/weights")
 def weights():
