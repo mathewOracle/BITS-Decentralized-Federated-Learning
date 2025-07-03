@@ -4,7 +4,13 @@ import numpy as np
 import os
 from train_and_sync import create_model, train_model, get_weights, set_weights, gossip_sync
 from apscheduler.schedulers.background import BackgroundScheduler
+import os
 
+POD_NAME = os.getenv("HOSTNAME")  
+
+POD_IP = os.popen('hostname -i').read().strip()
+
+print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}")
 
 app = FastAPI()
 model = create_model()
@@ -51,7 +57,7 @@ def trigger_evaluate():
 def startup_event():
     scheduler.add_job(train, 'interval', seconds=10)
     scheduler.add_job(evaluate, 'interval', seconds=10)
-    scheduler.add_job(sync_all, 'interval', seconds=30)
+    scheduler.add_job(sync_all, 'interval', seconds=30) # can be ste as cron job on one pod alone if needed
     scheduler.start()
 
 @app.get("/weights")
