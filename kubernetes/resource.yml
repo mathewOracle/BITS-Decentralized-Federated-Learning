@@ -44,8 +44,8 @@ spec:
           httpGet:
             path: /metrics
             port: 8000
-          initialDelaySeconds: 300
-          periodSeconds: 60
+          initialDelaySeconds: 5
+          periodSeconds: 10
         resources:
           requests:
             memory: "128Mi"
