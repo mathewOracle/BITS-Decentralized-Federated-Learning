@@ -4,6 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATEST
 import numpy as np
 import os
+import time
 
 from train_and_sync import (
     create_model,
@@ -12,6 +13,7 @@ from train_and_sync import (
     set_weights,
     gossip_sync,
     load_uci_har_subject_data,
+    download_uci_har,
 )
 
 # Environment Setup
@@ -19,7 +21,6 @@ POD_NAME = os.getenv("HOSTNAME")
 POD_IP = os.popen("hostname -i").read().strip()
 SUBJECT_ID = int(os.environ.get("SUBJECT_ID", "1"))
 PEERS = os.environ.get("PEERS", "").split(",")
-
 print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
 
 app = FastAPI()
@@ -27,9 +28,9 @@ model = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
 
 # Metrics
-loss_metric = Gauge("har_training_loss", "Training loss on UCI HAR")
-acc_metric = Gauge("har_training_accuracy", "Training accuracy on UCI HAR")
-mse_metric = Gauge("har_eval_mse", "Evaluation MSE on same-subject data")
+loss_metric = Gauge("har_training_loss", "Training loss on UCI HAR",["stage"])
+acc_metric = Gauge("har_training_accuracy", "Training accuracy on UCI HAR",["stage"])
+mse_metric = Gauge("har_eval_mse", "Evaluation MSE on same-subject data",["stage"])
 sync_counter = Counter("har_sync_count", "Number of successful peer syncs")
 
 # Internal state
@@ -38,12 +39,9 @@ last_acc = 0.0
 last_mse = 0.0
 
 stream_index = 0
-stream_batch_size = 1
+stream_batch_size = 10
 X_stream = None
 y_stream = None
-
-eval_index = 0
-eval_batch_size = 1
 
 class SyncRequest(BaseModel):
     peer: str
@@ -82,19 +80,10 @@ def train(sync_stage):
 
 
 def evaluate(sync_stage):
-    global last_mse, eval_index, X_stream, y_stream
+    global last_mse
     try:
-        if X_stream is None or y_stream is None:
-            X_stream, y_stream = load_uci_har_subject_data(SUBJECT_ID)
-            print(f"[Init-Eval] Subject {SUBJECT_ID}: {X_stream.shape[0]} samples")
-
-        if eval_index >= len(X_stream):
-            eval_index = 0
-
-        end = min(eval_index + eval_batch_size, len(X_stream))
-        X_eval = X_stream[eval_index:end]
-        y_eval = y_stream[eval_index:end]
-        eval_index = end
+        X_eval = X_stream
+        y_eval = y_stream
 
         preds = model.predict(X_eval)
         pred_labels = np.argmax(preds, axis=1)
@@ -103,8 +92,8 @@ def evaluate(sync_stage):
         last_mse = float(mse)
         mse_metric.labels(stage=sync_stage).set(last_mse)
 
-        print(f"[{sync_stage} Eval] Evaluated batch {eval_index - eval_batch_size}-{end} | MSE={mse:.4f}")
-        return {"mse": mse, "batch": f"{eval_index - eval_batch_size}-{end}"}
+        print(f"[{sync_stage} Eval] Evaluated for the subject whole data | MSE={mse:.4f}")
+        return {"mse": mse}
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -118,19 +107,13 @@ def process():
     train("post-sync")
     evaluate("post-sync")
 
-
-@app.on_event("startup")
-def startup_event():
-    scheduler.add_job(process, "interval", seconds=15)
-    scheduler.start()
-
 @app.post("/train")
 def trigger_train():
-    return train()
+    return train("maunal-trigger")
 
 @app.get("/evaluate")
 def trigger_evaluate():
-    return evaluate()
+    return evaluate("maunal-trigger")
 
 @app.get("/weights")
 def get_model_weights():
@@ -153,3 +136,9 @@ def sync_all():
 @app.get("/metrics")
 def prometheus_metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+@app.on_event("startup")
+def startup_event():
+    scheduler.add_job(process, "interval", seconds=15)
+    scheduler.start()

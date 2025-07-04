@@ -1,7 +1,9 @@
 import numpy as np
 import pickle
 import tensorflow as tf
-import requests
+import requests, urllib
+import os
+import zipfile
 
 # === Model ===
 def create_model(input_shape=561, num_classes=6):
@@ -36,10 +38,23 @@ def gossip_sync(peer_url, model):
 
 # === Dataset ===
 def load_uci_har_subject_data(subject_id):
-    basepath="UCI_HAR_Dataset/"
+    if not os.path.exists("UCI HAR Dataset/train/X_train.txt"):
+        print("Dataset Not available, loading the dtaaset...")
+        download_uci_har()
+    basepath="UCI HAR Dataset/"
     X = np.loadtxt(basepath+"train/X_train.txt")
     y = np.loadtxt(basepath+"train/y_train.txt") - 1
     subjects = np.loadtxt(basepath+"train/subject_train.txt").astype(int)
     print(f"Loaded for subject {subject_id}")
     mask = subjects == subject_id
     return X[mask], y[mask]
+
+def download_uci_har():
+    print("Downloading UCI HAR dataset...")
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00240/UCI%20HAR%20Dataset.zip"
+    zip_path = os.curdir+"/uci_har.zip"
+    urllib.request.urlretrieve(url, zip_path)
+
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(".")
+    print("Dataset downloaded and extracted.")
