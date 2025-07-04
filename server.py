@@ -27,10 +27,10 @@ model_with_sync = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
 
 # Metrics
-loss_metric = Gauge("har_training_loss", "Training loss on UCI HAR",["stage"])
-acc_metric = Gauge("har_training_accuracy", "Training accuracy on UCI HAR",["stage"])
-mse_metric = Gauge("har_eval_mse", "Evaluation MSE on same-subject data",["stage"])
-sync_counter = Counter("har_sync_count", "Number of successful peer syncs")
+loss_metric = Gauge("training_loss", "Training loss on UCI HAR",["stage"])
+acc_metric = Gauge("training_accuracy", "Training accuracy on UCI HAR",["stage"])
+mse_metric = Gauge("eval_mse", "Evaluation MSE on same-subject data",["stage"])
+sync_counter = Counter("sync_count", "Number of successful peer syncs")
 
 # Internal state
 last_loss = 0.0
