@@ -33,7 +33,6 @@ def set_weights(model, data):
     weights_bytes = data
     weights = pickle.loads(weights_bytes)
     model.set_weights(weights)
-    print(f"[Sync] Weights set from peer {peer_url}")
     return {"status": "weights updated", "layers": len(weights)}
 
 def gossip_sync(peer_url, model):
@@ -42,6 +41,7 @@ def gossip_sync(peer_url, model):
         response = requests.get(f"http://{peer_url}/weights", stream=True)
         response.raise_for_status()
         set_weights(model, response.content)
+        print(f"[Sync] Weights set from peer {peer_url}")
     except Exception as e:
         print(f"[Sync Error] {e}")
         return {"error": str(e)}
