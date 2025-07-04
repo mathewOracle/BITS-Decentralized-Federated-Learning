@@ -3,7 +3,9 @@ import pickle
 import tensorflow as tf
 import requests, urllib
 import os
+import io
 import zipfile
+import fastapi
 
 # === Model ===
 def create_model(input_shape=561, num_classes=6):
@@ -22,32 +24,56 @@ def train_model(X, y, model, epochs=2):
     return model, loss, acc
 
 def get_weights(model):
-    return pickle.dumps(model.get_weights())
+    weights = model.get_weights()
+    data = pickle.dumps(weights)
+    return fastapi.responses.StreamingResponse(io.BytesIO(data), media_type="application/octet-stream")
+
 
 def set_weights(model, data):
-    weights = pickle.loads(data)
+    weights_bytes = data
+    weights = pickle.loads(weights_bytes)
     model.set_weights(weights)
+    print(f"[Sync] Weights set from peer {peer_url}")
+    return {"status": "weights updated", "layers": len(weights)}
 
 def gossip_sync(peer_url, model):
     try:
-        r = requests.get(f"http://{peer_url}/weights", timeout=5)
-        set_weights(model, r.content)
-        print(f"Gossip sync successful with {peer_url}")
+        print(f"[Sync] Pulling weights from {peer_url}/weights")
+        response = requests.get(f"http://{peer_url}/weights", stream=True)
+        response.raise_for_status()
+        set_weights(model, response.content)
     except Exception as e:
-        print(f"Failed gossip sync with {peer_url}: {e}")
+        print(f"[Sync Error] {e}")
+        return {"error": str(e)}
 
 # === Dataset ===
-def load_uci_har_subject_data(subject_id):
+def load_uci_har_subject_data(subject_id, test_split=0.2):
     if not os.path.exists("UCI HAR Dataset/train/X_train.txt"):
-        print("Dataset Not available, loading the dtaaset...")
-        download_uci_har()
-    basepath="UCI HAR Dataset/"
-    X = np.loadtxt(basepath+"train/X_train.txt")
-    y = np.loadtxt(basepath+"train/y_train.txt") - 1
-    subjects = np.loadtxt(basepath+"train/subject_train.txt").astype(int)
-    print(f"Loaded for subject {subject_id}")
+        print("Dataset not available, downloading...")
+        download_uci_har()  # Make sure this function is defined
+
+    basepath = "UCI HAR Dataset/"
+    X = np.loadtxt(basepath + "train/X_train.txt")
+    y = np.loadtxt(basepath + "train/y_train.txt") - 1
+    subjects = np.loadtxt(basepath + "train/subject_train.txt").astype(int)
+
+    print(f"Loaded data for subject {subject_id}")
     mask = subjects == subject_id
-    return X[mask], y[mask]
+    X_subj = X[mask]
+    y_subj = y[mask]
+
+    # Split: use the last N% as test set
+    total_samples = len(X_subj)
+    test_size = int(total_samples * test_split)
+    train_size = total_samples - test_size
+
+    X_train = X_subj[:train_size]
+    y_train = y_subj[:train_size]
+    X_test = X_subj[train_size:]
+    y_test = y_subj[train_size:]
+
+    print(f"Subject {subject_id}: train={X_train.shape[0]}, test={X_test.shape[0]}")
+    return X_train, y_train, X_test, y_test
 
 def download_uci_har():
     print("Downloading UCI HAR dataset...")

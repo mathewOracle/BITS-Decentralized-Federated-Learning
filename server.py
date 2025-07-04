@@ -10,7 +10,6 @@ from train_and_sync import (
     create_model,
     train_model,
     get_weights,
-    set_weights,
     gossip_sync,
     load_uci_har_subject_data,
 )
@@ -23,7 +22,8 @@ PEERS = os.environ.get("PEERS", "").split(",")
 print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
 
 app = FastAPI()
-model = create_model(input_shape=561, num_classes=6)
+model_without_sync = create_model(input_shape=561, num_classes=6)
+model_with_sync = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
 
 # Metrics
@@ -39,17 +39,16 @@ last_mse = 0.0
 
 stream_index = 0
 stream_batch_size = 10
-X_stream = None
-y_stream = None
+X_stream, y_stream, X_test, y_test = load_uci_har_subject_data(SUBJECT_ID)
 
 class SyncRequest(BaseModel):
     peer: str
 
-def train(sync_stage):
-    global last_loss, last_acc, stream_index, X_stream, y_stream
+def train(sync_stage,model):
+    global last_loss, last_acc, stream_index, X_stream, y_stream,X_test, y_test
     try:
         if X_stream is None or y_stream is None:
-            X_stream, y_stream = load_uci_har_subject_data(SUBJECT_ID)
+            X_stream, y_stream, X_test, y_test = load_uci_har_subject_data(SUBJECT_ID)
             print(f"[Init] Subject {SUBJECT_ID}: {X_stream.shape[0]} samples")
 
         if stream_index >= len(X_stream):
@@ -78,19 +77,16 @@ def train(sync_stage):
         return {"error": str(e)}
 
 
-def evaluate(sync_stage):
+def evaluate(sync_stage,model):
     global last_mse
     try:
-        X_eval = X_stream
-        y_eval = y_stream
-
+        X_eval = X_test
+        y_eval = y_test
         preds = model.predict(X_eval)
         pred_labels = np.argmax(preds, axis=1)
         mse = np.mean((pred_labels - y_eval) ** 2)
-
         last_mse = float(mse)
         mse_metric.labels(stage=sync_stage).set(last_mse)
-
         print(f"[{sync_stage} Eval] Evaluated for the subject whole data | MSE={mse:.4f}")
         return {"mse": mse}
     except Exception as e:
@@ -100,37 +96,39 @@ def evaluate(sync_stage):
 
 
 def process():
-    train("pre-sync")
-    evaluate("pre-sync")
+    train("no-sync",model_without_sync)
+    evaluate("no-sync",model_without_sync)
     sync_all()
-    train("post-sync")
-    evaluate("post-sync")
+    train("sync",model_with_sync)
+    evaluate("sync",model_with_sync)
 
 @app.post("/train")
 def trigger_train():
-    return train("maunal-trigger")
+    return { "no-sync": train("maunal-trigger",model_without_sync),
+            "sync": train("maunal-trigger",model_with_sync) }
 
 @app.get("/evaluate")
 def trigger_evaluate():
-    return evaluate("maunal-trigger")
+    return { "no-sync": evaluate("maunal-trigger",model_without_sync),
+            "sync": evaluate("maunal-trigger",model_with_sync) }
 
 @app.get("/weights")
 def get_model_weights():
-    model_weights=get_weights(model)
+    model_weights=get_weights(model_with_sync)
     print(f"Model Weights: {model_weights}")
     return model_weights
 
 @app.post("/sync")
 def sync(req: SyncRequest):
-    gossip_sync(req.peer, model)
+    gossip_sync(req.peer, model_with_sync)
     sync_counter.inc()
     return {"status": f"synced with {req.peer}"}
 
 @app.post("/sync-all")
 def sync_all():
     for peer in PEERS:
-        if peer.strip():
-            gossip_sync(peer.strip(), model)
+        if peer.strip() != POD_NAME: # remove unnecessary self sync
+            gossip_sync(peer.strip(), model_with_sync)
             sync_counter.inc()
     return {"status": "synced with all peers"}
 
