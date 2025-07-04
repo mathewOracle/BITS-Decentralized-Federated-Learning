@@ -6,6 +6,7 @@ import os
 import io
 import zipfile
 import fastapi
+import collections
 
 # === Model ===
 def create_model(input_shape=561, num_classes=6):
@@ -47,6 +48,16 @@ def gossip_sync(peer_url, model):
         return {"error": str(e)}
 
 # === Dataset ===
+def get_ordered_subject_ids(n:int = 10):
+    if not os.path.exists("UCI HAR Dataset/train/X_train.txt"):
+        print("Dataset not available, downloading...")
+        download_uci_har()  # Make sure this function is defined
+    basepath = "UCI HAR Dataset/"
+    subject_counts=collections.Counter(np.loadtxt(basepath + "train/subject_train.txt").astype(int))
+    top_n_subjects = [s for s, _ in subject_counts.most_common(n)]
+    print(f"top N subjects in order: {top_n_subjects}")
+    return top_n_subjects
+
 def load_uci_har_subject_data(subject_id, test_split=0.2):
     if not os.path.exists("UCI HAR Dataset/train/X_train.txt"):
         print("Dataset not available, downloading...")

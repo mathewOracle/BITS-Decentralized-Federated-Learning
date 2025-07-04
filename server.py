@@ -12,12 +12,17 @@ from train_and_sync import (
     get_weights,
     gossip_sync,
     load_uci_har_subject_data,
+    get_ordered_subject_ids,
 )
 
 # Environment Setup
 POD_NAME = os.getenv("HOSTNAME")
+pod_index = POD_NAME.split("-")[-1]
+if POD_NAME!=pod_index: # for pod deplyment in GKE
+    SUBJECT_ID = get_ordered_subject_ids()[int(pod_index)]
+else:
+    SUBJECT_ID = int(os.environ.get("SUBJECT_ID", "1")) 
 POD_IP = os.popen("hostname -i").read().strip()
-SUBJECT_ID = int(os.environ.get("SUBJECT_ID", "1"))
 PEERS = os.environ.get("PEERS", "").split(",")
 print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
 
