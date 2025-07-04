@@ -13,7 +13,6 @@ from train_and_sync import (
     set_weights,
     gossip_sync,
     load_uci_har_subject_data,
-    download_uci_har,
 )
 
 # Environment Setup
@@ -117,7 +116,9 @@ def trigger_evaluate():
 
 @app.get("/weights")
 def get_model_weights():
-    return get_weights(model)
+    model_weights=get_weights(model)
+    print("Model Weights: {model_weights}")
+    return model_weights
 
 @app.post("/sync")
 def sync(req: SyncRequest):
