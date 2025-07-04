@@ -117,7 +117,7 @@ def trigger_evaluate():
 @app.get("/weights")
 def get_model_weights():
     model_weights=get_weights(model)
-    print("Model Weights: {model_weights}")
+    print(f"Model Weights: {model_weights}")
     return model_weights
 
 @app.post("/sync")
