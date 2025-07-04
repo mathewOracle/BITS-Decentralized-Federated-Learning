@@ -1,50 +1,129 @@
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
+from apscheduler.schedulers.background import BackgroundScheduler
+from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATEST
 import numpy as np
 import os
-from train_and_sync import create_model, train_model, get_weights, set_weights, gossip_sync
-from apscheduler.schedulers.background import BackgroundScheduler
-import os
 
-POD_NAME = os.getenv("HOSTNAME")  
+from train_and_sync import (
+    create_model,
+    train_model,
+    get_weights,
+    set_weights,
+    gossip_sync,
+    load_uci_har_subject_data,
+)
 
-POD_IP = os.popen('hostname -i').read().strip()
+# Environment Setup
+POD_NAME = os.getenv("HOSTNAME")
+POD_IP = os.popen("hostname -i").read().strip()
+SUBJECT_ID = int(os.environ.get("SUBJECT_ID", "1"))
+PEERS = os.environ.get("PEERS", "").split(",")
 
-print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}")
+print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
 
 app = FastAPI()
-model = create_model()
-last_loss = 0.0
-last_mse = 0.0
+model = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
+
+# Metrics
+loss_metric = Gauge("har_training_loss", "Training loss on UCI HAR")
+acc_metric = Gauge("har_training_accuracy", "Training accuracy on UCI HAR")
+mse_metric = Gauge("har_eval_mse", "Evaluation MSE on same-subject data")
+sync_counter = Counter("har_sync_count", "Number of successful peer syncs")
+
+# Internal state
+last_loss = 0.0
+last_acc = 0.0
+last_mse = 0.0
+
+stream_index = 0
+stream_batch_size = 1
+X_stream = None
+y_stream = None
+
+eval_index = 0
+eval_batch_size = 1
 
 class SyncRequest(BaseModel):
     peer: str
 
-def train():
-    print("Training model...")
-    global last_loss
+def train(sync_stage):
+    global last_loss, last_acc, stream_index, X_stream, y_stream
     try:
-        x = np.random.rand(50, 1)
-        y = 2 * x + 1 + np.random.randn(50, 1) * 0.1
-        _, loss = train_model(x, y, model)
-        last_loss = loss
-        return {"status": "trained", "loss": loss}
+        if X_stream is None or y_stream is None:
+            X_stream, y_stream = load_uci_har_subject_data(SUBJECT_ID)
+            print(f"[Init] Subject {SUBJECT_ID}: {X_stream.shape[0]} samples")
+
+        if stream_index >= len(X_stream):
+            print("End of data stream reached. Restarting stream.")
+            stream_index = 0
+
+        # Get current batch
+        end = min(stream_index + stream_batch_size, len(X_stream))
+        X_batch = X_stream[stream_index:end]
+        y_batch = y_stream[stream_index:end]
+        
+        # Train on batch
+        _, loss, acc = train_model(X_batch, y_batch, model, epochs=1)
+        last_loss = float(loss)
+        last_acc = float(acc)
+        loss_metric.labels(stage=sync_stage).set(last_loss)
+        acc_metric.labels(stage=sync_stage).set(last_acc)
+        stream_index = end  # move pointer
+        
+        print(f"[{sync_stage} Train] Trained on batch {stream_index - stream_batch_size} to {end} | Loss={loss:.4f} Acc={acc:.4f}")
+        
+        return {"status": "trained", "batch": f"{stream_index - stream_batch_size}-{end}", "post sync loss": loss, "post sync acc": acc}
     except Exception as e:
         import traceback
         traceback.print_exc()
         return {"error": str(e)}
-    
-def evaluate():
-    print("Evaluating model...")
-    global last_mse
-    x_test = np.linspace(0, 1, 20).reshape(-1, 1)
-    y_true = 2 * x_test + 1
-    y_pred = model.predict(x_test)
-    mse = np.mean((y_true - y_pred) ** 2)
-    last_mse = float(mse)
-    return {"mse": last_mse}
-    
+
+
+def evaluate(sync_stage):
+    global last_mse, eval_index, X_stream, y_stream
+    try:
+        if X_stream is None or y_stream is None:
+            X_stream, y_stream = load_uci_har_subject_data(SUBJECT_ID)
+            print(f"[Init-Eval] Subject {SUBJECT_ID}: {X_stream.shape[0]} samples")
+
+        if eval_index >= len(X_stream):
+            eval_index = 0
+
+        end = min(eval_index + eval_batch_size, len(X_stream))
+        X_eval = X_stream[eval_index:end]
+        y_eval = y_stream[eval_index:end]
+        eval_index = end
+
+        preds = model.predict(X_eval)
+        pred_labels = np.argmax(preds, axis=1)
+        mse = np.mean((pred_labels - y_eval) ** 2)
+
+        last_mse = float(mse)
+        mse_metric.labels(stage=sync_stage).set(last_mse)
+
+        print(f"[{sync_stage} Eval] Evaluated batch {eval_index - eval_batch_size}-{end} | MSE={mse:.4f}")
+        return {"mse": mse, "batch": f"{eval_index - eval_batch_size}-{end}"}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
+
+
+def process():
+    train("pre-sync")
+    evaluate("pre-sync")
+    sync_all()
+    train("post-sync")
+    evaluate("post-sync")
+
+
+@app.on_event("startup")
+def startup_event():
+    scheduler.add_job(process, "interval", seconds=15)
+    scheduler.start()
+
 @app.post("/train")
 def trigger_train():
     return train()
@@ -53,35 +132,24 @@ def trigger_train():
 def trigger_evaluate():
     return evaluate()
 
-@app.on_event("startup")
-def startup_event():
-    scheduler.add_job(train, 'interval', seconds=10)
-    scheduler.add_job(evaluate, 'interval', seconds=10)
-    scheduler.add_job(sync_all, 'interval', seconds=30) # can be ste as cron job on one pod alone if needed
-    scheduler.start()
-
 @app.get("/weights")
-def weights():
+def get_model_weights():
     return get_weights(model)
 
 @app.post("/sync")
 def sync(req: SyncRequest):
     gossip_sync(req.peer, model)
+    sync_counter.inc()
     return {"status": f"synced with {req.peer}"}
 
 @app.post("/sync-all")
 def sync_all():
-    peers = os.environ.get("PEERS", "").split(',')
-    print("Peers to sync with:", peers)
-    for peer in peers:
-        if peer:
+    for peer in PEERS:
+        if peer.strip():
             gossip_sync(peer.strip(), model)
-    return {"status": "gossip sync done"}
+            sync_counter.inc()
+    return {"status": "synced with all peers"}
 
 @app.get("/metrics")
-def metrics():
-    print(f"ml_loss {last_loss}\nml_mse {last_mse}")
-    return Response(
-        content=f"ml_loss {last_loss}\nml_mse {last_mse}\n",
-        media_type="text/plain"
-    )
+def prometheus_metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
