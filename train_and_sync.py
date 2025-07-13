@@ -48,7 +48,7 @@ def gossip_sync(peer_url, model):
         return {"error": str(e)}
 
 # === Dataset ===
-def get_ordered_subject_ids(n:int = 10):
+def get_ordered_subject_ids(n:int = 30):
     if not os.path.exists("UCI HAR Dataset/train/X_train.txt"):
         print("Dataset not available, downloading...")
         download_uci_har()  # Make sure this function is defined

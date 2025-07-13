@@ -4,7 +4,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATEST
 import numpy as np
 import os
-import time
+import requests
+
+
 
 from train_and_sync import (
     create_model,
@@ -146,3 +148,11 @@ def prometheus_metrics():
 def startup_event():
     scheduler.add_job(process, "interval", seconds=15)
     scheduler.start()
+
+@app.get("/getlocation")
+def get_zone():
+    url = "http://metadata.google.internal/computeMetadata/v1/instance/zone"
+    headers = {"Metadata-Flavor": "Google"}
+    response = requests.get(url, headers=headers)
+    zone = response.text.split('/')[-1]  # e.g., 'us-central1-a'
+    return zone

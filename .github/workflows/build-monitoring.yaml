@@ -3,7 +3,7 @@ name: Deploy bits 2023aa05887
 on:
   push:
     branches:
-    - 'main'
+    - 'monitoring'
 
 jobs:
   deploy:
@@ -37,3 +37,29 @@ jobs:
       run: |
         gcloud container clusters get-credentials autopilot-cluster-a --region us-central1
         kubectl delete --ignore-not-found=true -f kubernetes/resource.yml && kubectl apply -f kubernetes/resource.yml
+
+    - name: install the gcloud cli-east
+      uses: google-github-actions/setup-gcloud@v0
+      with:
+        project_id: ${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}
+        service_account_key: ${{secrets.GOOGLE_APPLICATION_CREDENTIALS_BITSMATHEW2 }}
+        install_components: 'gke-gcloud-auth-plugin'
+        export_default_credentials: true
+
+    - name: build and push the docker image east
+      run: |
+        gcloud auth configure-docker us-central1-docker.pkg.dev
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}/gcp-docker-repo/decentral:latest .
+        docker push us-central1-docker.pkg.dev/${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}/gcp-docker-repo/decentral:latest
+      
+    - name: Replace placeholders in kubernetes resource.yml east
+      run: |
+        sed -i 's/{{PROJECTID}}/${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}/g' kubernetes/resource.yml
+
+    - name: deploy to gke east
+      env:
+        GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}
+      run: |
+        gcloud container clusters get-credentials autopilot-cluster-b --region us-east1
+        kubectl delete --ignore-not-found=true -f kubernetes/resource.yml && kubectl apply -f kubernetes/resource.yml
+
