@@ -22,8 +22,13 @@ def getConfigMap(pod_index):
         with open(config_file) as f:
             flags = json.load(f)
     except FileNotFoundError:
+        print(f"Feature flags file not found for pod {pod_index}, using default flags")
+    try:    
         with open("/etc/feature-flags/default.json") as f:
-            flags = json.load(f)
+                flags = json.load(f)
+    except FileNotFoundError:
+        print("Default feature flags file not found, using empty flags")
+        flags = {}
     print(f"Pod {pod_index} using flags: {flags}")
     if flags.get("useSyncTraining"):
         print("Sync Federated Learning enabled")

@@ -85,6 +85,12 @@ spec:
             configMapKeyRef:
               name: peer-config
               key: PEERS
+        - name: FEATURE_FLAGS_FILE
+          value: "/etc/feature-flags/flags-$(POD_INDEX).json"
+        - name: POD_INDEX
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         readinessProbe:
           httpGet:
             path: /metrics
@@ -98,6 +104,15 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "500m"
+        volumeMounts:
+        - name: feature-flags
+          mountPath: /etc/feature-flags
+          readOnly: true
+      volumes:
+      - name: feature-flags
+        configMap:
+          name: iot-feature-flags
+
 ---
 apiVersion: v1
 kind: Service
