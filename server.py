@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Response
+from fastapi.params import Query
 from pydantic import BaseModel
 from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATEST
@@ -31,16 +32,13 @@ def getConfigMap(pod_index):
         print("Deep Shallow Features weightage enabled")
     if flags.get("enableTimeDistanceWeightage"):
         print("Time Distance Weightage enabled")
+    return flags
 
 # Environment Setup
 POD_NAME = os.getenv("HOSTNAME")
 pod_index = POD_NAME.split("-")[-1]
-####### Subject ID selection ##########
-if POD_NAME!=pod_index: # for pod deplyment in GKE
-    SUBJECT_ID = get_ordered_subject_ids()[int(pod_index)]
-else:
-    SUBJECT_ID = int(os.environ.get("SUBJECT_ID", "1")) 
-########################################
+config_flag=getConfigMap(pod_index)
+SUBJECT_ID= int(config_flag.get("subjectId", "4"))
 
 
 POD_IP = os.popen("hostname -i").read().strip()
@@ -48,15 +46,15 @@ PEERS = os.environ.get("PEERS", "").split(",")
 print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
 
 app = FastAPI()
-model_without_sync = create_model(input_shape=561, num_classes=6)
-model_with_sync = create_model(input_shape=561, num_classes=6)
+model = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
 
 # Metrics
 loss_metric = Gauge("training_loss", "Training loss on UCI HAR",["stage"])
 acc_metric = Gauge("training_accuracy", "Training accuracy on UCI HAR",["stage"])
 mse_metric = Gauge("eval_mse", "Evaluation MSE on same-subject data",["stage"])
-sync_counter = Counter("sync_count", "Number of successful peer syncs")
+sync_counter = Counter("sync_count", "Number of successful peer syncs",["param_type"])
+
 
 # Internal state
 last_loss = 0.0
@@ -122,39 +120,46 @@ def evaluate(sync_stage,model):
 
 
 def process():
-    train("no-sync",model_without_sync)
-    evaluate("no-sync",model_without_sync)
-    sync_all()
-    train("sync",model_with_sync)
-    evaluate("sync",model_with_sync)
+    if config_flag.get("useSyncTraining", False):
+        print("[Sync] Starting sync process")
+        if config_flag.get("enableDeepShallowFeaturesweightage", False):
+            sync_all()
+        else:
+            sync_all(param_type="shallow")
+        train("sync", model)
+        evaluate("sync", model)
+        print("[Sync] Sync process completed")
+    else:
+        train("no-sync",model)
+        evaluate("no-sync",model)
 
 @app.post("/train")
 def trigger_train():
-    return { "no-sync": train("maunal-trigger",model_without_sync),
-            "sync": train("maunal-trigger",model_with_sync) }
+    return { "no-sync": train("maunal-trigger",model),
+            "sync": train("maunal-trigger",model) }
 
 @app.get("/evaluate")
 def trigger_evaluate():
-    return { "no-sync": evaluate("maunal-trigger",model_without_sync),
-            "sync": evaluate("maunal-trigger",model_with_sync) }
+    return { "no-sync": evaluate("maunal-trigger",model),
+            "sync": evaluate("maunal-trigger",model) }
 
 @app.get("/weights")
-def get_model_weights():
-    model_weights=get_weights(model_with_sync)
+def get_model_weights(param_type: str = Query("shallow", description="Parameter type: shallow or deep")):
+    model_weights=get_weights(model,param_type)
     print(f"Model Weights: {model_weights}")
     return model_weights
 
 @app.post("/sync")
 def sync(req: SyncRequest):
-    gossip_sync(req.peer, model_with_sync)
+    gossip_sync(req.peer, model)
     sync_counter.inc()
     return {"status": f"synced with {req.peer}"}
 
 @app.post("/sync-all")
-def sync_all():
+def sync_all(param_type: str):
     for peer in PEERS:
         if peer.strip() != POD_NAME: # remove unnecessary self sync
-            gossip_sync(peer.strip(), model_with_sync)
+            gossip_sync(peer.strip(), model, param_type=param_type)
             sync_counter.inc()
     return {"status": "synced with all peers"}
 
@@ -167,6 +172,8 @@ def prometheus_metrics():
 def startup_event():
     scheduler.add_job(process, "interval", seconds=15)
     scheduler.start()
+    if config_flag.get("enableDeepShallowFeaturesweightage", False):
+        scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})
 
 @app.get("/getlocation")
 def get_zone():

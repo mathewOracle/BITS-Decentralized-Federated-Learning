@@ -4,8 +4,7 @@ metadata:
   name: peer-config
 data:
   PEERS: |
-    10.10.0.10:8000,10.10.0.11:8000,10.10.0.12:8000,10.10.0.13:8000,10.10.0.14:8000,
-    10.20.0.10:8000,10.20.0.11:8000,10.20.0.12:8000,10.20.0.13:8000,10.20.0.14:8000
+      10.20.0.10:8000,10.20.0.11:8000,10.20.0.12:8000,10.20.0.13:8000,10.20.0.14:8000
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -14,36 +13,42 @@ metadata:
 data:
   flags-0.json: |
     {
+      "subjectId": "4",
       "useSyncTraining": false,
       "enableDeepShallowFeaturesweightage": false,
       "enableTimeDistanceWeightage": false
     }
   flags-1.json: |
     {
+      "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": false,
       "enableTimeDistanceWeightage": false
     }
   flags-2.json: |
     {
+      "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": true,
       "enableTimeDistanceWeightage": false
     }
   flags-3.json: |
     {
+      "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": false,
       "enableTimeDistanceWeightage": true
     }
   flags-4.json: |
     {
+      "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": true,
       "enableTimeDistanceWeightage": true
     }
   default.json: |
     {
+      "subjectId": "4",
       "useSyncTraining": false,
       "enableDeepShallowFeaturesweightage": false,
       "enableTimeDistanceWeightage": false

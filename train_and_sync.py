@@ -7,6 +7,7 @@ import io
 import zipfile
 import fastapi
 import collections
+import pandas as pd
 
 # === Model ===
 def create_model(input_shape=561, num_classes=6):
@@ -24,39 +25,55 @@ def train_model(X, y, model, epochs=2):
     acc = history.history['accuracy'][-1]
     return model, loss, acc
 
-def get_weights(model):
-    weights = model.get_weights()
-    data = pickle.dumps(weights)
-    return fastapi.responses.StreamingResponse(io.BytesIO(data), media_type="application/octet-stream")
+def get_weights(model, param_type=None):
+    try:
+        first_layer_weights, first_layer_biases = model.layers[0].get_weights()
+        if param_type is None:
+            data = {'weights': first_layer_weights, 'biases': first_layer_biases}
+        else:
+            features_df = pd.read_excel("features.xls")
+            filtered_indices = features_df[features_df['type'] == param_type]['No'].values - 1
+            filtered_weights = first_layer_weights[filtered_indices, :]
+            data = {'weights': filtered_weights, 'biases': first_layer_biases}
+        data = pickle.dumps(data)
+        return fastapi.responses.StreamingResponse(io.BytesIO(data), media_type="application/octet-stream")
+    except Exception as e:
+        raise RuntimeError(f"Error in get_weights: {e}")
 
+def set_weights(model, data, param_type=None, alpha=0.8):
+    try:
+        incoming = pickle.loads(data)
+        current_weights = model.get_weights()
+        first_layer_weights, first_layer_biases = current_weights[0], current_weights[1]
 
-def set_weights(model, data):
-    weights_bytes = data
-    weights = pickle.loads(weights_bytes)
-    model.set_weights(weights)
-    return {"status": "weights updated", "layers": len(weights)}
+        if param_type is None:
+            averaged = alpha * incoming['weights'] + (1 - alpha) * first_layer_weights
+            first_layer_weights = averaged
+        else:
+            features_df = pd.read_excel("features.xls")
+            filtered_indices = features_df[features_df['type'] == param_type]['No'].values - 1
+            averaged = alpha * incoming['weights'] + (1 - alpha) * first_layer_weights[filtered_indices, :]
+            first_layer_weights[filtered_indices, :] = averaged
 
-def gossip_sync(peer_url, model):
+        current_weights[0] = first_layer_weights
+        current_weights[1] = first_layer_biases
+        model.set_weights(current_weights)
+        return {"status": f"weights updated (averaged {param_type})", "layers": len(current_weights)}
+    except Exception as e:
+        return {"error": f"Error in set_weights: {e}"}
+
+def gossip_sync(peer_url, model, param_type=None):
     try:
         print(f"[Sync] Pulling weights from {peer_url}/weights")
-        response = requests.get(f"http://{peer_url}/weights", stream=True)
+        response = requests.get(f"http://{peer_url}/weights", params={'param_type':param_type}, stream=True)
         response.raise_for_status()
-        set_weights(model, response.content)
+        set_weights(model, response.content, param_type=param_type)
         print(f"[Sync] Weights set from peer {peer_url}")
     except Exception as e:
         print(f"[Sync Error] {e}")
         return {"error": str(e)}
 
 # === Dataset ===
-def get_ordered_subject_ids(n:int = 30):
-    if not os.path.exists("UCI HAR Dataset/train/X_train.txt"):
-        print("Dataset not available, downloading...")
-        download_uci_har()  # Make sure this function is defined
-    basepath = "UCI HAR Dataset/"
-    subject_counts=collections.Counter(np.loadtxt(basepath + "train/subject_train.txt").astype(int))
-    top_n_subjects = [s for s, _ in subject_counts.most_common(n)]
-    print(f"top N subjects in order: {top_n_subjects}")
-    return top_n_subjects
 
 def load_uci_har_subject_data(subject_id=None, test_split=0.2):
     if not os.path.exists("UCI HAR Dataset/train/X_train.txt"):

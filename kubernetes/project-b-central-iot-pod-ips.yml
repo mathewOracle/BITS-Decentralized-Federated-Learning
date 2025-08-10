@@ -12,8 +12,44 @@ kind: ConfigMap
 metadata:
   name: iot-feature-flags
 data:
+  flags-0.json: |
+    {
+      "subjectId": "5",
+      "useSyncTraining": false,
+      "enableDeepShallowFeaturesweightage": false,
+      "enableTimeDistanceWeightage": false
+    }
+  flags-1.json: |
+    {
+      "subjectId": "13",
+      "useSyncTraining": false,
+      "enableDeepShallowFeaturesweightage": false,
+      "enableTimeDistanceWeightage": false
+    }
+  flags-2.json: |
+    {
+      "subjectId": "25",
+      "useSyncTraining": false,
+      "enableDeepShallowFeaturesweightage": false,
+      "enableTimeDistanceWeightage": false
+    }
+  flags-3.json: |
+    {
+      "subjectId": "25",
+      "useSyncTraining": false,
+      "enableDeepShallowFeaturesweightage": false,
+      "enableTimeDistanceWeightage": false
+    }
+  flags-4.json: |
+    {
+      "subjectId": "5",
+      "useSyncTraining": false,
+      "enableDeepShallowFeaturesweightage": false,
+      "enableTimeDistanceWeightage": false
+    }
   default.json: |
     {
+      "subjectId": "5",
       "useSyncTraining": false,
       "enableDeepShallowFeaturesweightage": false,
       "enableTimeDistanceWeightage": false
