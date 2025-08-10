@@ -27,13 +27,13 @@ jobs:
         docker build -t us-central1-docker.pkg.dev/${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}/gcp-docker-repo/decentral:latest .
         docker push us-central1-docker.pkg.dev/${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}/gcp-docker-repo/decentral:latest
       
-    - name: Replace placeholders in kubernetes resource.yml
+    - name: Replace placeholders in kubernetes project-b-central-iot-pod-ips.yml
       run: |
-        sed -i 's/{{PROJECTID}}/${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}/g' kubernetes/resource.yml
+        sed -i 's/{{PROJECTID}}/${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}/g' kubernetes/project-b-central-iot-pod-ips.yml
 
     - name: deploy to gke
       env:
         GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECTID_BITSMATHEW2 }}
       run: |
-        gcloud container clusters get-credentials autopilot-cluster-b --region us-east1
-        kubectl delete --ignore-not-found=true -f kubernetes/resource.yml && kubectl apply -f kubernetes/resource.yml
+        gcloud container clusters get-credentials autopilot-cluster-b --region us-central1
+        kubectl delete --ignore-not-found=true -f kubernetes/project-b-central-iot-pod-ips.yml && kubectl apply -f kubernetes/project-b-central-iot-pod-ips.yml

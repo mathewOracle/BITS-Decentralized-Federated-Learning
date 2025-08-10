@@ -98,3 +98,4 @@ kubectl port-forward pod/iot-node-0 8000:8000
 
 ### Grafana link
 http://34.59.88.18:3000/
+admin / bitsadmin

@@ -58,7 +58,7 @@ def get_ordered_subject_ids(n:int = 30):
     print(f"top N subjects in order: {top_n_subjects}")
     return top_n_subjects
 
-def load_uci_har_subject_data(subject_id, test_split=0.2):
+def load_uci_har_subject_data(subject_id=None, test_split=0.2):
     if not os.path.exists("UCI HAR Dataset/train/X_train.txt"):
         print("Dataset not available, downloading...")
         download_uci_har()  # Make sure this function is defined
@@ -68,10 +68,14 @@ def load_uci_har_subject_data(subject_id, test_split=0.2):
     y = np.loadtxt(basepath + "train/y_train.txt") - 1
     subjects = np.loadtxt(basepath + "train/subject_train.txt").astype(int)
 
-    print(f"Loaded data for subject {subject_id}")
-    mask = subjects == subject_id
-    X_subj = X[mask]
-    y_subj = y[mask]
+    if subject_id is None:
+        X_subj = X
+        y_subj = y
+    else:
+        print(f"Loaded data for subject {subject_id}")
+        mask = subjects == subject_id
+        X_subj = X[mask]
+        y_subj = y[mask]
 
     # Split: use the last N% as test set
     total_samples = len(X_subj)

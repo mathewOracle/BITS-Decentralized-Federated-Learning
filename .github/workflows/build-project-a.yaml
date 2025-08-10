@@ -29,11 +29,11 @@ jobs:
       
     - name: Replace placeholders in kubernetes resource.yml
       run: |
-        sed -i 's/{{PROJECTID}}/${{ secrets.GOOGLE_PROJECTID }}/g' kubernetes/resource.yml
+        sed -i 's/{{PROJECTID}}/${{ secrets.GOOGLE_PROJECTID }}/g' kubernetes/project-a-central-iot-pod-ips.yml
 
     - name: deploy to gke
       env:
         GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECTID }}
       run: |
         gcloud container clusters get-credentials autopilot-cluster-a --region us-central1
-        kubectl delete --ignore-not-found=true -f kubernetes/resource.yml && kubectl apply -f kubernetes/resource.yml
+        kubectl delete --ignore-not-found=true -f kubernetes/project-a-central-iot-pod-ips.yml && kubectl apply -f kubernetes/project-a-central-iot-pod-ips.yml

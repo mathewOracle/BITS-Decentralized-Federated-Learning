@@ -5,8 +5,7 @@ from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATE
 import numpy as np
 import os
 import requests
-
-
+import json
 
 from train_and_sync import (
     create_model,
@@ -17,13 +16,33 @@ from train_and_sync import (
     get_ordered_subject_ids,
 )
 
+def getConfigMap(pod_index):
+    config_file = f"/etc/feature-flags/flags-{pod_index}.json"
+    try:
+        with open(config_file) as f:
+            flags = json.load(f)
+    except FileNotFoundError:
+        with open("/etc/feature-flags/default.json") as f:
+            flags = json.load(f)
+    print(f"Pod {pod_index} using flags: {flags}")
+    if flags.get("useSyncTraining"):
+        print("Sync Federated Learning enabled")
+    if flags.get("enableDeepShallowFeaturesweightage"):
+        print("Deep Shallow Features weightage enabled")
+    if flags.get("enableTimeDistanceWeightage"):
+        print("Time Distance Weightage enabled")
+
 # Environment Setup
 POD_NAME = os.getenv("HOSTNAME")
 pod_index = POD_NAME.split("-")[-1]
+####### Subject ID selection ##########
 if POD_NAME!=pod_index: # for pod deplyment in GKE
     SUBJECT_ID = get_ordered_subject_ids()[int(pod_index)]
 else:
     SUBJECT_ID = int(os.environ.get("SUBJECT_ID", "1")) 
+########################################
+
+
 POD_IP = os.popen("hostname -i").read().strip()
 PEERS = os.environ.get("PEERS", "").split(",")
 print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
