@@ -6,8 +6,6 @@ from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATE
 import numpy as np
 import os
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 from train_and_sync import (
     create_model,
     train_model,
