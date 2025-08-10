@@ -17,8 +17,6 @@ from train_and_sync import (
     getConfigMap
 )
 
-
-
 # Environment Setup
 POD_NAME = os.getenv("HOSTNAME")
 pod_index = POD_NAME.split("-")[-1]
@@ -48,8 +46,6 @@ last_mse = 0.0
 stream_index = 0
 stream_batch_size = 10
 X_stream, y_stream, X_test, y_test = load_uci_har_subject_data(SUBJECT_ID)
-print("X stream")
-print(X_stream.shape)
 
 class SyncRequest(BaseModel):
     peer: str
@@ -151,9 +147,9 @@ def prometheus_metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-# @app.on_event("startup")
-# def startup_event():
-#     scheduler.add_job(process, "interval", seconds=15)
-#     scheduler.start()
-#     if config_flag.get("enableDeepShallowFeaturesweightage", False):
-#         scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})
+@app.on_event("startup")
+def startup_event():
+    scheduler.add_job(process, "interval", seconds=15)
+    scheduler.start()
+    if config_flag.get("enableDeepShallowFeaturesweightage", False):
+        scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})
