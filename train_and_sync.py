@@ -9,8 +9,6 @@ import fastapi
 import json
 import pandas as pd
 import math
-
-from server import LOCATION,config_flag
 # === Model ===
 def create_model(input_shape=561, num_classes=6):
     model = tf.keras.Sequential([
@@ -161,3 +159,10 @@ def location_distance(lat2, lon2):
     a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
     c = 2 * math.asin(math.sqrt(a))
     return R * c
+
+POD_NAME = os.getenv("HOSTNAME")
+pod_index = POD_NAME.split("-")[-1]
+config_flag = getConfigMap(pod_index) 
+LOCATION = config_flag.get("location", {"latitude": 0.0, "longitude": 0.0})
+print(f"Pod {pod_index} location: {LOCATION['latitude']}, {LOCATION['longitude']}"  )
+print(f"Config flag: {config_flag}")
