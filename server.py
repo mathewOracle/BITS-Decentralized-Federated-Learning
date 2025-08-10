@@ -8,7 +8,7 @@ import os
 import json
 
 from train_and_sync import (
-    create_model,
+    # create_model,
     train_model,
     get_weights,
     gossip_sync,
