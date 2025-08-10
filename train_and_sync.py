@@ -25,10 +25,10 @@ def train_model(X, y, model, epochs=2):
     acc = history.history['accuracy'][-1]
     return model, loss, acc
 
-def get_weights(model, param_type=None):
+def get_weights(model, param_type="None"):
     try:
         first_layer_weights, first_layer_biases = model.layers[0].get_weights()
-        if param_type is None:
+        if param_type=="None":
             data = {'weights': first_layer_weights, 'biases': first_layer_biases}
         else:
             features_df = pd.read_excel("features.xls")
@@ -40,13 +40,13 @@ def get_weights(model, param_type=None):
     except Exception as e:
         raise RuntimeError(f"Error in get_weights: {e}")
 
-def set_weights(model, data, param_type=None, alpha=0.8):
+def set_weights(model, data, param_type="None", alpha=0.8):
     try:
         incoming = pickle.loads(data)
         current_weights = model.get_weights()
         first_layer_weights, first_layer_biases = current_weights[0], current_weights[1]
 
-        if param_type is None:
+        if param_type=="None":
             averaged = alpha * incoming['weights'] + (1 - alpha) * first_layer_weights
             first_layer_weights = averaged
         else:
@@ -62,7 +62,7 @@ def set_weights(model, data, param_type=None, alpha=0.8):
     except Exception as e:
         return {"error": f"Error in set_weights: {e}"}
 
-def gossip_sync(peer_url, model, param_type=None):
+def gossip_sync(peer_url, model, param_type="None"):
     try:
         print(f"[Sync] Pulling weights from {peer_url}/weights")
         response = requests.get(f"http://{peer_url}/weights", params={'param_type':param_type}, stream=True)

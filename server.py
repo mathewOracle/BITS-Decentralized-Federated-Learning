@@ -14,7 +14,6 @@ from train_and_sync import (
     get_weights,
     gossip_sync,
     load_uci_har_subject_data,
-    get_ordered_subject_ids,
 )
 
 def getConfigMap(pod_index):
@@ -123,7 +122,7 @@ def process():
     if config_flag.get("useSyncTraining", False):
         print("[Sync] Starting sync process")
         if config_flag.get("enableDeepShallowFeaturesweightage", False):
-            sync_all()
+            sync_all(param_type="None")
         else:
             sync_all(param_type="shallow")
         train("sync", model)
@@ -135,8 +134,8 @@ def process():
 
 @app.post("/train")
 def trigger_train():
-    return { "no-sync": train("maunal-trigger",model),
-            "sync": train("maunal-trigger",model) }
+    return { "no-sync": train("manual-trigger",model),
+            "sync": train("manual-trigger",model) }
 
 @app.get("/evaluate")
 def trigger_evaluate():
@@ -160,7 +159,7 @@ def sync_all(param_type: str):
     for peer in PEERS:
         if peer.strip() != POD_NAME: # remove unnecessary self sync
             gossip_sync(peer.strip(), model, param_type=param_type)
-            sync_counter.inc()
+            sync_counter.inc(param_type=param_type)
     return {"status": "synced with all peers"}
 
 @app.get("/metrics")
