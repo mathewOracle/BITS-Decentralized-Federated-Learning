@@ -13,12 +13,13 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # === Model ===
 def create_model(input_shape=561, num_classes=6):
-    model = tf.keras.Sequential([
-        tf.keras.Input(shape=(input_shape,)),
-        tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(num_classes, activation='softmax')
-    ])
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    with tf.device('/CPU:0'):
+        model = tf.keras.Sequential([
+            tf.keras.Input(shape=(input_shape,)),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dense(num_classes, activation='softmax')
+        ])
+        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     return model
 
 def train_model(X, y, model, epochs=2):
