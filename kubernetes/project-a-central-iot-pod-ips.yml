@@ -16,7 +16,7 @@ data:
       "subjectId": "4",
       "useSyncTraining": false,
       "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false
+      "enableTimeDistanceWeightage": false,
       "location":{
         "latitude": 12.9715987,
         "longitude": 77.594566

@@ -48,6 +48,8 @@ last_mse = 0.0
 stream_index = 0
 stream_batch_size = 10
 X_stream, y_stream, X_test, y_test = load_uci_har_subject_data(SUBJECT_ID)
+print("X stream")
+print(X_stream.shape)
 
 class SyncRequest(BaseModel):
     peer: str
@@ -58,7 +60,6 @@ def train(sync_stage,model):
         if X_stream is None or y_stream is None:
             X_stream, y_stream, X_test, y_test = load_uci_har_subject_data(SUBJECT_ID)
             print(f"[Init] Subject {SUBJECT_ID}: {X_stream.shape[0]} samples")
-
         if stream_index >= len(X_stream):
             print("End of data stream reached. Restarting stream.")
             stream_index = 0
@@ -119,13 +120,11 @@ def process():
 
 @app.post("/train")
 def trigger_train():
-    return { "no-sync": train("manual-trigger",model),
-            "sync": train("manual-trigger",model) }
+    return train("manual-trigger",model)
 
 @app.get("/evaluate")
 def trigger_evaluate():
-    return { "no-sync": evaluate("maunal-trigger",model),
-            "sync": evaluate("maunal-trigger",model) }
+    return evaluate("maunal-trigger",model)
 
 @app.get("/weights")
 def get_model_weights(param_type: str = Query("shallow", description="Parameter type: shallow or deep")):
@@ -152,9 +151,9 @@ def prometheus_metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-@app.on_event("startup")
-def startup_event():
-    scheduler.add_job(process, "interval", seconds=15)
-    scheduler.start()
-    if config_flag.get("enableDeepShallowFeaturesweightage", False):
-        scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})
+# @app.on_event("startup")
+# def startup_event():
+#     scheduler.add_job(process, "interval", seconds=15)
+#     scheduler.start()
+#     if config_flag.get("enableDeepShallowFeaturesweightage", False):
+#         scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})

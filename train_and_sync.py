@@ -10,6 +10,7 @@ import json
 import pandas as pd
 import math
 # === Model ===
+
 def create_model(input_shape=561, num_classes=6):
     model = tf.keras.Sequential([
         tf.keras.Input(shape=(input_shape,)),
@@ -88,9 +89,17 @@ def load_uci_har_subject_data(subject_id=None, test_split=0.2):
         download_uci_har()  # Make sure this function is defined
 
     basepath = "UCI HAR Dataset/"
-    X = np.loadtxt(basepath + "train/X_train.txt")
-    y = np.loadtxt(basepath + "train/y_train.txt") - 1
-    subjects = np.loadtxt(basepath + "train/subject_train.txt").astype(int)
+    X_train = np.loadtxt(basepath + "train/X_train.txt")
+    y_train = np.loadtxt(basepath + "train/y_train.txt") - 1
+    subjects_train = np.loadtxt(basepath + "train/subject_train.txt").astype(int)
+    # Load test split
+    X_test = np.loadtxt(basepath + "test/X_test.txt")
+    y_test = np.loadtxt(basepath + "test/y_test.txt") - 1
+    subjects_test = np.loadtxt(basepath + "test/subject_test.txt").astype(int)
+    # Combine both
+    X = np.concatenate([X_train, X_test], axis=0)
+    y = np.concatenate([y_train, y_test], axis=0)
+    subjects = np.concatenate([subjects_train, subjects_test], axis=0)
 
     if subject_id is None:
         X_subj = X
