@@ -9,6 +9,7 @@ import fastapi
 import json
 import pandas as pd
 import math
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # === Model ===
 def create_model(input_shape=561, num_classes=6):
