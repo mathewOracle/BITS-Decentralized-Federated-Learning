@@ -50,7 +50,7 @@ print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS:
 app = FastAPI()
 print(f"Starting server for subject {SUBJECT_ID} at {POD_IP}")
 print("next step is creating the model")
-model = create_model(input_shape=561, num_classes=6)
+# model = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
 
 # Metrics
@@ -169,13 +169,13 @@ def prometheus_metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-@app.on_event("startup")
-def startup_event():
-    POD_NAME = os.getenv("HOSTNAME")
-    pod_index = POD_NAME.split("-")[-1]
-    config_flag = getConfigMap(pod_index)
-    print(f"[Startup] Initializing server for subject {SUBJECT_ID} at {POD_IP}")
-    scheduler.add_job(process, "interval", seconds=15)
-    scheduler.start()
-    if config_flag.get("enableDeepShallowFeaturesweightage", False):
-        scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})
+# @app.on_event("startup")
+# def startup_event():
+#     POD_NAME = os.getenv("HOSTNAME")
+#     pod_index = POD_NAME.split("-")[-1]
+#     config_flag = getConfigMap(pod_index)
+#     print(f"[Startup] Initializing server for subject {SUBJECT_ID} at {POD_IP}")
+#     scheduler.add_job(process, "interval", seconds=15)
+#     scheduler.start()
+#     if config_flag.get("enableDeepShallowFeaturesweightage", False):
+#         scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})
