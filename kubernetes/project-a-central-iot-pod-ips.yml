@@ -17,41 +17,65 @@ data:
       "useSyncTraining": false,
       "enableDeepShallowFeaturesweightage": false,
       "enableTimeDistanceWeightage": false
+      "location":{
+        "latitude": 12.9715987,
+        "longitude": 77.594566
+      }
     }
   flags-1.json: |
     {
       "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false
+      "enableTimeDistanceWeightage": false,
+      "location":{
+        "latitude": 12.9715987,
+        "longitude": 77.594566
+      }
     }
   flags-2.json: |
     {
       "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": true,
-      "enableTimeDistanceWeightage": false
+      "enableTimeDistanceWeightage": false,
+      "location":{
+        "latitude": 12.9715987,
+        "longitude": 77.594566
+      }
     }
   flags-3.json: |
     {
       "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": true
+      "enableTimeDistanceWeightage": true,
+      "location":{
+        "latitude": 12.9715987,
+        "longitude": 77.594566
+      }
     }
   flags-4.json: |
     {
       "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": true,
-      "enableTimeDistanceWeightage": true
+      "enableTimeDistanceWeightage": true,
+      "location":{
+        "latitude": 12.9715987,
+        "longitude": 77.594566
+      }
     }
   default.json: |
     {
       "subjectId": "4",
       "useSyncTraining": false,
       "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false
+      "enableTimeDistanceWeightage": false,
+      "location":{
+        "latitude": 12.9715987,
+        "longitude": 77.594566
+      }
     }
 ---
 apiVersion: apps/v1

@@ -5,8 +5,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATEST
 import numpy as np
 import os
-import requests
 import json
+import math
 
 from train_and_sync import (
     create_model,
@@ -14,37 +14,17 @@ from train_and_sync import (
     get_weights,
     gossip_sync,
     load_uci_har_subject_data,
+    getConfigMap
 )
 
-def getConfigMap(pod_index):
-    config_file = f"/etc/feature-flags/flags-{pod_index}.json"
-    try:
-        with open(config_file) as f:
-            flags = json.load(f)
-    except FileNotFoundError:
-        print(f"Feature flags file not found for pod {pod_index}, using default flags")
-    try:    
-        with open("/etc/feature-flags/default.json") as f:
-                flags = json.load(f)
-    except FileNotFoundError:
-        print("Default feature flags file not found, using empty flags")
-        flags = {}
-    print(f"Pod {pod_index} using flags: {flags}")
-    if flags.get("useSyncTraining"):
-        print("Sync Federated Learning enabled")
-    if flags.get("enableDeepShallowFeaturesweightage"):
-        print("Deep Shallow Features weightage enabled")
-    if flags.get("enableTimeDistanceWeightage"):
-        print("Time Distance Weightage enabled")
-    return flags
+
 
 # Environment Setup
 POD_NAME = os.getenv("HOSTNAME")
 pod_index = POD_NAME.split("-")[-1]
 config_flag=getConfigMap(pod_index)
 SUBJECT_ID= int(config_flag.get("subjectId", "4"))
-
-
+LOCATION = config_flag.get("location", {"latitude": 0.0, "longitude": 0.0})
 POD_IP = os.popen("hostname -i").read().strip()
 PEERS = os.environ.get("PEERS", "").split(",")
 print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
@@ -151,7 +131,7 @@ def trigger_evaluate():
 def get_model_weights(param_type: str = Query("shallow", description="Parameter type: shallow or deep")):
     model_weights=get_weights(model,param_type)
     print(f"Model Weights: {model_weights}")
-    return model_weights
+    return {"weights": model_weights, "location": LOCATION}
 
 @app.post("/sync")
 def sync(req: SyncRequest):
@@ -178,11 +158,3 @@ def startup_event():
     scheduler.start()
     if config_flag.get("enableDeepShallowFeaturesweightage", False):
         scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})
-
-@app.get("/getlocation")
-def get_zone():
-    url = "http://metadata.google.internal/computeMetadata/v1/instance/zone"
-    headers = {"Metadata-Flavor": "Google"}
-    response = requests.get(url, headers=headers)
-    zone = response.text.split('/')[-1]  # e.g., 'us-central1-a'
-    return zone

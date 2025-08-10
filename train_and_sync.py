@@ -6,9 +6,11 @@ import os
 import io
 import zipfile
 import fastapi
-import collections
+import json
 import pandas as pd
+import math
 
+from server import LOCATION,config_flag
 # === Model ===
 def create_model(input_shape=561, num_classes=6):
     model = tf.keras.Sequential([
@@ -40,7 +42,7 @@ def get_weights(model, param_type="None"):
     except Exception as e:
         raise RuntimeError(f"Error in get_weights: {e}")
 
-def set_weights(model, data, param_type="None", alpha=0.8):
+def set_weights(model, data, param_type="None", alpha=0.8, location={"latitude": 0.0, "longitude": 0.0}):
     try:
         incoming = pickle.loads(data)
         current_weights = model.get_weights()
@@ -52,7 +54,14 @@ def set_weights(model, data, param_type="None", alpha=0.8):
         else:
             features_df = pd.read_excel("features.xls")
             filtered_indices = features_df[features_df['type'] == param_type]['No'].values - 1
-            averaged = alpha * incoming['weights'] + (1 - alpha) * first_layer_weights[filtered_indices, :]
+            if config_flag.get("enableTimeDistanceWeightage", False):
+                distance = location_distance(location.latitude, location.longitude)
+                print(f"Distance from peer: {distance} km")
+                scale = 1000  # You can tune this value
+                scaled_alpha = alpha * np.exp(-distance / scale)
+            else:
+                scaled_alpha = alpha
+            averaged = scaled_alpha * incoming['weights'] + (1 - scaled_alpha) * first_layer_weights[filtered_indices, :]
             first_layer_weights[filtered_indices, :] = averaged
 
         current_weights[0] = first_layer_weights
@@ -67,7 +76,7 @@ def gossip_sync(peer_url, model, param_type="None"):
         print(f"[Sync] Pulling weights from {peer_url}/weights")
         response = requests.get(f"http://{peer_url}/weights", params={'param_type':param_type}, stream=True)
         response.raise_for_status()
-        set_weights(model, response.content, param_type=param_type)
+        set_weights(model, response.json()["weights"], param_type=param_type, location=response.json()["location"])
         print(f"[Sync] Weights set from peer {peer_url}")
     except Exception as e:
         print(f"[Sync Error] {e}")
@@ -116,3 +125,39 @@ def download_uci_har():
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(".")
     print("Dataset downloaded and extracted.")
+
+def getConfigMap(pod_index):
+    config_file = f"/etc/feature-flags/flags-{pod_index}.json"
+    try:
+        with open(config_file) as f:
+            flags = json.load(f)
+    except FileNotFoundError:
+        print(f"Feature flags file not found for pod {pod_index}, using default flags")
+    try:    
+        with open("/etc/feature-flags/default.json") as f:
+                flags = json.load(f)
+    except FileNotFoundError:
+        print("Default feature flags file not found, using empty flags")
+        flags = {}
+    print(f"Pod {pod_index} using flags: {flags}")
+    if flags.get("useSyncTraining"):
+        print("Sync Federated Learning enabled")
+    if flags.get("enableDeepShallowFeaturesweightage"):
+        print("Deep Shallow Features weightage enabled")
+    if flags.get("enableTimeDistanceWeightage"):
+        print("Time Distance Weightage enabled")
+    return flags
+
+def location_distance(lat2, lon2):
+    # Radius of Earth in kilometers
+    R = 6371.0  
+    # Convert decimal degrees to radians
+    lat1_rad, lon1_rad = math.radians(LOCATION.latitude), math.radians(LOCATION.longitude)
+    lat2_rad, lon2_rad = math.radians(lat2), math.radians(lon2)
+    # Differences
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    # Haversine formula
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    return R * c
