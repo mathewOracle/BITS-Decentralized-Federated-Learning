@@ -107,9 +107,9 @@ def process():
     if config_flag.get("useSyncTraining", False):
         print("[Sync] Starting sync process")
         if not config_flag.get("enableDeepShallowFeaturesweightage", False):
-            sync_all(param_type="None")
+            sync_all(parameter_type="None")
         else:
-            sync_all(param_type="shallow")
+            sync_all(parameter_type="shallow")
         train("sync", model)
         evaluate("sync", model)
         print("[Sync] Sync process completed")
