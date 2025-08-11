@@ -106,8 +106,11 @@ spec:
             configMapKeyRef:
               name: peer-config
               key: PEERS
-        - name: FEATURE_FLAGS_FILE
-          value: "/etc/feature-flags/flags-data"
+        - name: FEATURE_FLAGS_DATA
+          valueFrom:
+            configMapKeyRef:
+              name: iot-feature-flags
+              key: flags-data
         readinessProbe:
           httpGet:
             path: /metrics
@@ -121,14 +124,6 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        volumeMounts:
-        - name: feature-flags
-          mountPath: /etc/feature-flags
-          readOnly: true
-      volumes:
-      - name: feature-flags
-        configMap:
-          name: iot-feature-flags
 ---
 apiVersion: v1
 kind: Service

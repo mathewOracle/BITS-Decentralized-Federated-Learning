@@ -16,17 +16,12 @@ from train_and_sync import (
 )
 
 def getConfigMap(pod_index):
-    config_file = f"/etc/feature-flags/flags-data"
-    try:
-        with open(config_file) as f:
-            flagsdata = json.load(f)
-            print(flagsdata)
-            if "flags-{pod_index}" in flagsdata:   
-                flags = flagsdata[f"flags-{pod_index}"]
-            else:
-                flags = flagsdata["default"]
-    except FileNotFoundError:
-        print(f"Feature flags file not found for pod {pod_index}, using default flags")
+    flagsdata = json.load(os.environ.get("FEATURE_FLAGS_DATA", ''))
+    print(flagsdata)
+    if f"flags-{pod_index}" in flagsdata:
+        flags = flagsdata[f"flags-{pod_index}"]
+    else:
+        print(f"No specific flags found for this pod {pod_index}, using default flags")
         flags={
             "subjectId": "4",
             "useSyncTraining": False,
@@ -37,6 +32,7 @@ def getConfigMap(pod_index):
                 "longitude": 77.594566
             }
         }
+
     print(f"Pod {pod_index} using flags: {flags}")
     if flags.get("useSyncTraining"):
         print("Sync Federated Learning enabled")
