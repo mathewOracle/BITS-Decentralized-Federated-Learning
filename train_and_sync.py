@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-# import tensorflow as tf
+import tensorflow as tf
 import requests, urllib
 import os
 import io
@@ -12,15 +12,15 @@ import math
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # # === Model ===
-# def create_model(input_shape=561, num_classes=6):
-#     with tf.device('/CPU:0'):
-#         model = tf.keras.Sequential([
-#             tf.keras.Input(shape=(input_shape,)),
-#             tf.keras.layers.Dense(64, activation='relu'),
-#             tf.keras.layers.Dense(num_classes, activation='softmax')
-#         ])
-#         model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-#     return model
+def create_model(input_shape=561, num_classes=6):
+    with tf.device('/CPU:0'):
+        model = tf.keras.Sequential([
+            tf.keras.Input(shape=(input_shape,)),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dense(num_classes, activation='softmax')
+        ])
+        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    return model
 
 def train_model(X, y, model, epochs=2):
     history = model.fit(X, y, epochs=epochs, batch_size=32, verbose=0)

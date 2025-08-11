@@ -26,6 +26,16 @@ def getConfigMap(pod_index):
                 flags = flagsdata["default"]
     except FileNotFoundError:
         print(f"Feature flags file not found for pod {pod_index}, using default flags")
+        flags={
+            "subjectId": "4",
+            "useSyncTraining": False,
+            "enableDeepShallowFeaturesweightage": False,
+            "enableTimeDistanceWeightage": False,
+            "location":{
+                "latitude": 12.9715987,
+                "longitude": 77.594566
+            }
+        }
     print(f"Pod {pod_index} using flags: {flags}")
     if flags.get("useSyncTraining"):
         print("Sync Federated Learning enabled")
