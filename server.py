@@ -19,7 +19,8 @@ def getConfigMap(pod_index):
     config_file = f"/etc/feature-flags/flags-data"
     try:
         with open(config_file) as f:
-            flagsdata = json.load(f)[f"flags-{pod_index}"]
+            flagsdata = json.load(f)
+            print(flagsdata)
             if "flags-{pod_index}" in flagsdata:   
                 flags = flagsdata[f"flags-{pod_index}"]
             else:
@@ -58,7 +59,7 @@ print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS:
 app = FastAPI()
 print(f"Starting server for subject {SUBJECT_ID} at {POD_IP}")
 print("next step is creating the model")
-# model = create_model(input_shape=561, num_classes=6)
+model = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
 
 # Metrics
