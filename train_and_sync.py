@@ -1,6 +1,5 @@
 import numpy as np
 import pickle
-import tensorflow as tf
 import requests, urllib
 import os
 import io
@@ -9,7 +8,9 @@ import fastapi
 import json
 import pandas as pd
 import math
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
 
 # # === Model ===
 def create_model(input_shape=561, num_classes=6):
