@@ -6,6 +6,7 @@ from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATE
 import numpy as np
 import os
 import json
+import pickle
 
 from train_and_sync import (
     create_model,
@@ -23,7 +24,6 @@ POD_NAME = os.getenv("HOSTNAME")
 pod_index = POD_NAME.split("-")[-1]
 config_flag=getConfigMap(pod_index)
 SUBJECT_ID= int(config_flag.get("subjectId", "4"))
-LOCATION = config_flag.get("location", {"latitude": 0.0, "longitude": 0.0})
 POD_IP = os.popen("hostname -i").read().strip()
 PEERS = os.environ.get("PEERS", "").split(",")
 print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
@@ -127,15 +127,15 @@ def trigger_evaluate():
 
 @app.get("/weights")
 def get_model_weights(param_type: str = Query("shallow", description="Parameter type: shallow or deep")):
-    model_weights=get_weights(model,param_type)
-    print(f"Model Weights: {model_weights}")
-    return {"weights": model_weights, "location": LOCATION}
+    model_weights_location=get_weights(model,param_type)
+    print(f"Model Weights: {model_weights_location}")
+    return model_weights_location
 
-@app.post("/sync")
-def sync(req: SyncRequest):
-    gossip_sync(req.peer, model)
-    sync_counter.inc()
-    return {"status": f"synced with {req.peer}"}
+# @app.post("/sync")
+# def sync(req: SyncRequest):
+#     gossip_sync(req.peer, model)
+#     sync_counter.inc()
+#     return {"status": f"synced with {req.peer}"}
 
 @app.post("/sync-all")
 def sync_all(param_type: str):

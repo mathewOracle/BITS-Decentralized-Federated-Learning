@@ -34,25 +34,24 @@ def get_weights(model, param_type="None"):
     try:
         first_layer_weights, first_layer_biases = model.layers[0].get_weights()
         if param_type=="None":
-            data = {'weights': first_layer_weights, 'biases': first_layer_biases}
+            data ={'model_param': {'weights': first_layer_weights, 'biases': first_layer_biases}, 'location': LOCATION}
         else:
             features_df = pd.read_excel("features.xls")
             filtered_indices = features_df[features_df['type'] == param_type]['No'].values - 1
             filtered_weights = first_layer_weights[filtered_indices, :]
-            data = {'weights': filtered_weights, 'biases': first_layer_biases}
-        data = pickle.dumps(data)
-        return fastapi.responses.StreamingResponse(io.BytesIO(data), media_type="application/octet-stream")
+            data = {'model_param': {'weights': filtered_weights, 'biases': first_layer_biases}, 'location': LOCATION}
+        pickled_data = pickle.dumps(data)
+        return fastapi.responses.StreamingResponse(io.BytesIO(pickled_data), media_type="application/octet-stream")
     except Exception as e:
         raise RuntimeError(f"Error in get_weights: {e}")
 
 def set_weights(model, data, param_type="None", alpha=0.8, location={"latitude": 0.0, "longitude": 0.0}):
     try:
-        incoming = pickle.loads(data)
         current_weights = model.get_weights()
         first_layer_weights, first_layer_biases = current_weights[0], current_weights[1]
 
         if param_type=="None":
-            averaged = alpha * incoming['weights'] + (1 - alpha) * first_layer_weights
+            averaged = alpha * data['weights'] + (1 - alpha) * first_layer_weights
             first_layer_weights = averaged
         else:
             features_df = pd.read_excel("features.xls")
@@ -64,7 +63,7 @@ def set_weights(model, data, param_type="None", alpha=0.8, location={"latitude":
                 scaled_alpha = alpha * np.exp(-distance / scale)
             else:
                 scaled_alpha = alpha
-            averaged = scaled_alpha * incoming['weights'] + (1 - scaled_alpha) * first_layer_weights[filtered_indices, :]
+            averaged = scaled_alpha * data['weights'] + (1 - scaled_alpha) * first_layer_weights[filtered_indices, :]
             first_layer_weights[filtered_indices, :] = averaged
 
         current_weights[0] = first_layer_weights
@@ -79,7 +78,9 @@ def gossip_sync(peer_url, model, param_type="None"):
         print(f"[Sync] Pulling weights from {peer_url}/weights")
         response = requests.get(f"http://{peer_url}/weights", params={'param_type':param_type}, stream=True)
         response.raise_for_status()
-        set_weights(model, response.json()["weights"], param_type=param_type, location=response.json()["location"])
+        parsed_data = json.loads(pickle.loads(response.content))
+        print(f"Sync Parsed data is {parsed_data}")
+        set_weights(model, parsed_data["model_param"], param_type=param_type, location=parsed_data["location"])
         print(f"[Sync] Weights set from peer {peer_url}")
     except Exception as e:
         print(f"[Sync Error] {e}")

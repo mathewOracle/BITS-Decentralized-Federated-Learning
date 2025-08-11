@@ -6,3 +6,4 @@ requests
 apscheduler
 prometheus_client
 pandas
+xlrd
