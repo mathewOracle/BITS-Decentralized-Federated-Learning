@@ -78,7 +78,7 @@ def gossip_sync(peer_url, model, param_type="None"):
         print(f"[Sync] Pulling weights from {peer_url}/weights")
         response = requests.get(f"http://{peer_url}/weights", params={'param_type':param_type}, stream=True)
         response.raise_for_status()
-        parsed_data = json.loads(pickle.loads(response.content))
+        parsed_data = pickle.loads(response.content)
         print(f"Sync Parsed data is {parsed_data}")
         set_weights(model, parsed_data["model_param"], param_type=param_type, location=parsed_data["location"])
         print(f"[Sync] Weights set from peer {peer_url}")
