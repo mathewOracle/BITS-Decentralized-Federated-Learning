@@ -106,7 +106,7 @@ def evaluate(sync_stage,model):
 def process():
     if config_flag.get("useSyncTraining", False):
         print("[Sync] Starting sync process")
-        if config_flag.get("enableDeepShallowFeaturesweightage", False):
+        if not config_flag.get("enableDeepShallowFeaturesweightage", False):
             sync_all(param_type="None")
         else:
             sync_all(param_type="shallow")
@@ -138,11 +138,11 @@ def get_model_weights(param_type: str = Query("shallow", description="Parameter 
 #     return {"status": f"synced with {req.peer}"}
 
 @app.post("/sync-all")
-def sync_all(param_type: str):
+def sync_all(parameter_type: str):
     for peer in PEERS:
         if peer.strip() != POD_NAME: # remove unnecessary self sync
-            gossip_sync(peer.strip(), model, param_type=param_type)
-            sync_counter.inc(param_type=param_type)
+            gossip_sync(peer.strip(), model, param_type=parameter_type)
+            sync_counter.labels(param_type=parameter_type).inc()
     return {"status": "synced with all peers"}
 
 @app.get("/metrics")
