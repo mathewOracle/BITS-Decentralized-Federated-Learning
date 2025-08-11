@@ -11,69 +11,70 @@ kind: ConfigMap
 metadata:
   name: iot-feature-flags
 data:
-  flags-data: {
-    "flags-0":{
-      "subjectId": "4",
-      "useSyncTraining": false,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 12.9715987,
-        "longitude": 77.594566
-      }
-    },
-    "flags-1": {
-      "subjectId": "4",
-      "useSyncTraining": true,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 12.9715987,
-        "longitude": 77.594566
-      }
-    },
-    "flags-2": {
-      "subjectId": "4",
-      "useSyncTraining": true,
-      "enableDeepShallowFeaturesweightage": true,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 12.9715987,
-        "longitude": 77.594566
-      }
-    },
-    "flags-3": {
-      "subjectId": "4",
-      "useSyncTraining": true,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": true,
-      "location":{
-        "latitude": 12.9715987,
-        "longitude": 77.594566
-      }
-    },
-    "flags-4":
+  flags-data: |
     {
-      "subjectId": "4",
-      "useSyncTraining": true,
-      "enableDeepShallowFeaturesweightage": true,
-      "enableTimeDistanceWeightage": true,
-      "location":{
-        "latitude": 12.9715987,
-        "longitude": 77.594566
-      }
-    },
-    "default": {
-      "subjectId": "4",
-      "useSyncTraining": false,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 12.9715987,
-        "longitude": 77.594566
+      "flags-0":{
+        "subjectId": "4",
+        "useSyncTraining": false,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 12.9715987,
+          "longitude": 77.594566
+        }
+      },
+      "flags-1": {
+        "subjectId": "4",
+        "useSyncTraining": true,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 12.9715987,
+          "longitude": 77.594566
+        }
+      },
+      "flags-2": {
+        "subjectId": "4",
+        "useSyncTraining": true,
+        "enableDeepShallowFeaturesweightage": true,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 12.9715987,
+          "longitude": 77.594566
+        }
+      },
+      "flags-3": {
+        "subjectId": "4",
+        "useSyncTraining": true,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": true,
+        "location":{
+          "latitude": 12.9715987,
+          "longitude": 77.594566
+        }
+      },
+      "flags-4":
+      {
+        "subjectId": "4",
+        "useSyncTraining": true,
+        "enableDeepShallowFeaturesweightage": true,
+        "enableTimeDistanceWeightage": true,
+        "location":{
+          "latitude": 12.9715987,
+          "longitude": 77.594566
+        }
+      },
+      "default": {
+        "subjectId": "4",
+        "useSyncTraining": false,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 12.9715987,
+          "longitude": 77.594566
+        }
       }
     }
-  }
 ---
 apiVersion: apps/v1
 kind: StatefulSet

@@ -8,7 +8,7 @@ import os
 import json
 
 from train_and_sync import (
-    # create_model,
+    create_model,
     train_model,
     get_weights,
     gossip_sync,
@@ -58,7 +58,7 @@ print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS:
 app = FastAPI()
 print(f"Starting server for subject {SUBJECT_ID} at {POD_IP}")
 print("next step is creating the model")
-# model = create_model(input_shape=561, num_classes=6)
+model = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
 
 # Metrics

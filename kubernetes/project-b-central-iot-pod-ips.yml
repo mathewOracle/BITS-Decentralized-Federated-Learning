@@ -12,52 +12,49 @@ kind: ConfigMap
 metadata:
   name: iot-feature-flags
 data:
-  flags-data: {
-    "flags-0.json":
-      {
+  flags-data: |
+    {
+      "flags-0": {
         "subjectId": "5",
         "useSyncTraining": false,
         "enableDeepShallowFeaturesweightage": false,
         "enableTimeDistanceWeightage": false,
-        "location":{
+        "location": {
           "latitude": 11.9715987,
           "longitude": 77.594566
         }
       },
-    "flags-1.json":
-      {
+      "flags-1": {
         "subjectId": "13",
         "useSyncTraining": false,
         "enableDeepShallowFeaturesweightage": false,
         "enableTimeDistanceWeightage": false,
-        "location":{
+        "location": {
           "latitude": 14.9715987,
           "longitude": 77.594566
         }
       },
-    "flags-2.json":
-      {
+      "flags-2": {
         "subjectId": "25",
         "useSyncTraining": false,
         "enableDeepShallowFeaturesweightage": false,
         "enableTimeDistanceWeightage": false,
-        "location":{
+        "location": {
           "latitude": 52.9715987,
           "longitude": 77.594566
         }
       },
-    "flags-3.json":
-      {
+      "flags-3": {
         "subjectId": "25",
         "useSyncTraining": false,
         "enableDeepShallowFeaturesweightage": false,
         "enableTimeDistanceWeightage": false,
-        "location":{
+        "location": {
           "latitude": 82.9715987,
           "longitude": 77.594566
         }
       },
-    "flags-4.json":
+      "flags-4":
       {
         "subjectId": "5",
         "useSyncTraining": false,
@@ -68,18 +65,18 @@ data:
           "longitude": 77.594566
         }
       },
-    "default.json":
+      "default":
       {
-        "subjectId": "5",
-        "useSyncTraining": false,
-        "enableDeepShallowFeaturesweightage": false,
-        "enableTimeDistanceWeightage": false,
+        "subjectId":"5",
+        "useSyncTraining" :false,
+        "enableDeepShallowFeaturesweightage" :false,
+        "enableTimeDistanceWeightage" :false,
         "location":{
-          "latitude": 12.1715987,
-          "longitude": 77.594566
-        }
-      }
-  }
+          "latitude" :12.1715987,
+          "longitude" :77.594566
+         }
+       }
+    }
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -112,7 +109,7 @@ spec:
               name: peer-config
               key: PEERS
         - name: FEATURE_FLAGS_FILE
-          value: "/etc/feature-flags/flags-$(POD_INDEX).json"
+          value: "/etc/feature-flags/flags-data"
         - name: POD_INDEX
           valueFrom:
             fieldRef:
