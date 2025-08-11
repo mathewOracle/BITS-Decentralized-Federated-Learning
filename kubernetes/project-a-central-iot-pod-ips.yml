@@ -108,6 +108,8 @@ spec:
               key: PEERS
         - name: FEATURE_FLAGS_FILE
           value: "/etc/feature-flags/flags-data"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "-1"
         readinessProbe:
           httpGet:
             path: /metrics
