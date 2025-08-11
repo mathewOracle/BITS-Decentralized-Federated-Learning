@@ -1,6 +1,5 @@
 fastapi
 uvicorn
-tensorflow
 numpy
 requests
 apscheduler
