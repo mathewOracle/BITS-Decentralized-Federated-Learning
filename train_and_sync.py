@@ -11,6 +11,7 @@ import math
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
+from config import getConfigMap
 
 # # === Model ===
 def create_model(input_shape=561, num_classes=6):
@@ -135,32 +136,6 @@ def download_uci_har():
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(".")
     print("Dataset downloaded and extracted.")
-
-def getConfigMap(pod_index):
-    flagsdata = json.load(os.environ.get("FEATURE_FLAGS_DATA", ''))
-    print(flagsdata)
-    if f"flags-{pod_index}" in flagsdata:
-        flags = flagsdata[f"flags-{pod_index}"]
-    else:
-        print(f"No specific flags found for this pod {pod_index}, using default flags")
-        flags={
-            "subjectId": "4",
-            "useSyncTraining": False,
-            "enableDeepShallowFeaturesweightage": False,
-            "enableTimeDistanceWeightage": False,
-            "location":{
-                "latitude": 12.9715987,
-                "longitude": 77.594566
-            }
-        }
-    print(f"Pod {pod_index} using flags: {flags}")
-    if flags.get("useSyncTraining"):
-        print("Sync Federated Learning enabled")
-    if flags.get("enableDeepShallowFeaturesweightage"):
-        print("Deep Shallow Features weightage enabled")
-    if flags.get("enableTimeDistanceWeightage"):
-        print("Time Distance Weightage enabled")
-    return flags
 
 def location_distance(lat2, lon2):
     # Radius of Earth in kilometers

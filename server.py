@@ -15,32 +15,8 @@ from train_and_sync import (
     load_uci_har_subject_data,
 )
 
-def getConfigMap(pod_index):
-    flagsdata = json.load(os.environ.get("FEATURE_FLAGS_DATA", ''))
-    print(flagsdata)
-    if f"flags-{pod_index}" in flagsdata:
-        flags = flagsdata[f"flags-{pod_index}"]
-    else:
-        print(f"No specific flags found for this pod {pod_index}, using default flags")
-        flags={
-            "subjectId": "4",
-            "useSyncTraining": False,
-            "enableDeepShallowFeaturesweightage": False,
-            "enableTimeDistanceWeightage": False,
-            "location":{
-                "latitude": 12.9715987,
-                "longitude": 77.594566
-            }
-        }
+from config import getConfigMap
 
-    print(f"Pod {pod_index} using flags: {flags}")
-    if flags.get("useSyncTraining"):
-        print("Sync Federated Learning enabled")
-    if flags.get("enableDeepShallowFeaturesweightage"):
-        print("Deep Shallow Features weightage enabled")
-    if flags.get("enableTimeDistanceWeightage"):
-        print("Time Distance Weightage enabled")
-    return flags
 
 # Environment Setup
 POD_NAME = os.getenv("HOSTNAME")
