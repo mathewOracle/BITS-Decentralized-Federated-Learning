@@ -11,8 +11,8 @@ kind: ConfigMap
 metadata:
   name: iot-feature-flags
 data:
-  flags-0.json: |
-    {
+  flags-data: {
+    "flags-0":{
       "subjectId": "4",
       "useSyncTraining": false,
       "enableDeepShallowFeaturesweightage": false,
@@ -21,9 +21,8 @@ data:
         "latitude": 12.9715987,
         "longitude": 77.594566
       }
-    }
-  flags-1.json: |
-    {
+    },
+    "flags-1": {
       "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": false,
@@ -32,9 +31,8 @@ data:
         "latitude": 12.9715987,
         "longitude": 77.594566
       }
-    }
-  flags-2.json: |
-    {
+    },
+    "flags-2": {
       "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": true,
@@ -43,9 +41,8 @@ data:
         "latitude": 12.9715987,
         "longitude": 77.594566
       }
-    }
-  flags-3.json: |
-    {
+    },
+    "flags-3": {
       "subjectId": "4",
       "useSyncTraining": true,
       "enableDeepShallowFeaturesweightage": false,
@@ -54,8 +51,8 @@ data:
         "latitude": 12.9715987,
         "longitude": 77.594566
       }
-    }
-  flags-4.json: |
+    },
+    "flags-4":
     {
       "subjectId": "4",
       "useSyncTraining": true,
@@ -65,9 +62,8 @@ data:
         "latitude": 12.9715987,
         "longitude": 77.594566
       }
-    }
-  default.json: |
-    {
+    },
+    "default": {
       "subjectId": "4",
       "useSyncTraining": false,
       "enableDeepShallowFeaturesweightage": false,
@@ -77,6 +73,7 @@ data:
         "longitude": 77.594566
       }
     }
+  }
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -109,11 +106,7 @@ spec:
               name: peer-config
               key: PEERS
         - name: FEATURE_FLAGS_FILE
-          value: "/etc/feature-flags/flags-$(POD_INDEX).json"
-        - name: POD_INDEX
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+          value: "/etc/feature-flags/flags-data"
         readinessProbe:
           httpGet:
             path: /metrics

@@ -12,72 +12,74 @@ kind: ConfigMap
 metadata:
   name: iot-feature-flags
 data:
-  flags-0.json: |
-    {
-      "subjectId": "5",
-      "useSyncTraining": false,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 11.9715987,
-        "longitude": 77.594566
+  flags-data: {
+    "flags-0.json":
+      {
+        "subjectId": "5",
+        "useSyncTraining": false,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 11.9715987,
+          "longitude": 77.594566
+        }
+      },
+    "flags-1.json":
+      {
+        "subjectId": "13",
+        "useSyncTraining": false,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 14.9715987,
+          "longitude": 77.594566
+        }
+      },
+    "flags-2.json":
+      {
+        "subjectId": "25",
+        "useSyncTraining": false,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 52.9715987,
+          "longitude": 77.594566
+        }
+      },
+    "flags-3.json":
+      {
+        "subjectId": "25",
+        "useSyncTraining": false,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 82.9715987,
+          "longitude": 77.594566
+        }
+      },
+    "flags-4.json":
+      {
+        "subjectId": "5",
+        "useSyncTraining": false,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 12.1715987,
+          "longitude": 77.594566
+        }
+      },
+    "default.json":
+      {
+        "subjectId": "5",
+        "useSyncTraining": false,
+        "enableDeepShallowFeaturesweightage": false,
+        "enableTimeDistanceWeightage": false,
+        "location":{
+          "latitude": 12.1715987,
+          "longitude": 77.594566
+        }
       }
-    }
-  flags-1.json: |
-    {
-      "subjectId": "13",
-      "useSyncTraining": false,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 14.9715987,
-        "longitude": 77.594566
-      }
-    }
-  flags-2.json: |
-    {
-      "subjectId": "25",
-      "useSyncTraining": false,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 52.9715987,
-        "longitude": 77.594566
-      }
-    }
-  flags-3.json: |
-    {
-      "subjectId": "25",
-      "useSyncTraining": false,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 82.9715987,
-        "longitude": 77.594566
-      }
-    }
-  flags-4.json: |
-    {
-      "subjectId": "5",
-      "useSyncTraining": false,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 12.1715987,
-        "longitude": 77.594566
-      }
-    }
-  default.json: |
-    {
-      "subjectId": "5",
-      "useSyncTraining": false,
-      "enableDeepShallowFeaturesweightage": false,
-      "enableTimeDistanceWeightage": false,
-      "location":{
-        "latitude": 12.1715987,
-        "longitude": 77.594566
-      }
-    }
+  }
 ---
 apiVersion: apps/v1
 kind: StatefulSet
