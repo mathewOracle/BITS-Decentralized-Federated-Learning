@@ -159,4 +159,4 @@ def startup_event():
     scheduler.add_job(process, "interval", seconds=15)
     scheduler.start()
     if config_flag.get("enableDeepShallowFeaturesweightage", False):
-        scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"param_type": "deep"})
+        scheduler.add_job(sync_all, "interval", seconds=60,kwargs={"parameter_type": "deep"})
