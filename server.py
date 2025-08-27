@@ -5,17 +5,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import Gauge, Counter, generate_latest, CONTENT_TYPE_LATEST
 import numpy as np
 import os
-import json
-import pickle
-
 from train_and_sync import (
-    create_model,
     train_model,
     get_weights,
     gossip_sync,
     load_uci_har_subject_data,
 )
-
+from model import create_model
 from config import getConfigMap
 
 
@@ -26,11 +22,12 @@ config_flag=getConfigMap(pod_index)
 SUBJECT_ID= int(config_flag.get("subjectId", "4"))
 POD_IP = os.popen("hostname -i").read().strip()
 PEERS = os.environ.get("PEERS", "").split(",")
-print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
 
+
+
+## app start
 app = FastAPI()
-print(f"Starting server for subject {SUBJECT_ID} at {POD_IP}")
-print("next step is creating the model")
+print(f"POD_NAME: {POD_NAME}, POD_IP: {POD_IP}, SUBJECT_ID: {SUBJECT_ID}, PEERS: {PEERS}")
 model = create_model(input_shape=561, num_classes=6)
 scheduler = BackgroundScheduler()
 
